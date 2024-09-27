@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35312.102
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VoxelGPU", "VoxelGPU\VoxelGPU.vcxproj", "{D7FF8E2F-5A5C-4036-B927-C2825D794937}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D7FF8E2F-5A5C-4036-B927-C2825D794937}.Debug|x64.ActiveCfg = Debug|x64
+		{D7FF8E2F-5A5C-4036-B927-C2825D794937}.Debug|x64.Build.0 = Debug|x64
+		{D7FF8E2F-5A5C-4036-B927-C2825D794937}.Release|x64.ActiveCfg = Release|x64
+		{D7FF8E2F-5A5C-4036-B927-C2825D794937}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0299EE3D-D7C4-4ECA-BAEF-3107C34BADEC}
+	EndGlobalSection
+EndGlobal
