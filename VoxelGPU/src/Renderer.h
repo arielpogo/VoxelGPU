@@ -29,8 +29,22 @@ public:
 	Camera* camera;
 	bool framebufferResized = false;
 
-	void run();
+	void init();
+
+	GLFWwindow* getWindowPointer() { return windowHandler->getWindowPointer(); }
 	
+	void doLoop()
+	{
+		glfwPollEvents();
+		drawFrame();
+	}
+
+	void terminate() 
+	{
+		vkDeviceWaitIdle(deviceHandler->getLogicalDevice()); //prevent premature closure while the device is finishing up
+		cleanup();
+	}
+
 private:
 	uint32_t currentFrame = 0;
 
@@ -60,7 +74,6 @@ private:
 	std::vector<VkSemaphore> renderFinishedSemaphores; //
 	std::vector<VkFence> inFlightFences; //used to block host while gpu is rendering the previous frame
 
-	void mainLoop();
 	void initVulkan();
 	void cleanup();
 
@@ -93,7 +106,7 @@ static void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 
 #include "Renderer.h"
 
-void Renderer::run()
+void Renderer::init()
 {
 	windowHandler = new WindowHandler();
 	GLFWwindow* window = windowHandler->getWindowPointer();
@@ -104,8 +117,6 @@ void Renderer::run()
 	glfwSetCursorPosCallback(window, mouse_callback);
 
 	initVulkan();
-	mainLoop();
-	cleanup();
 }
 
 void Renderer::initVulkan() {
@@ -129,17 +140,7 @@ void Renderer::initVulkan() {
 	createIndexBuffer();
 	createSyncObjects();
 
-	if (DEBUG) std::cout << "Vulkan Successfully Initialized.\n";
-}
-
-void Renderer::mainLoop()
-{
-	while (!glfwWindowShouldClose(windowHandler->getWindowPointer())) {
-		glfwPollEvents();
-		drawFrame();
-	}
-
-	vkDeviceWaitIdle(deviceHandler->getLogicalDevice()); //prevent premature closure while the device is finishing up
+	if (DEBUG) std::cout << "Vulkan successfully initialized.\n";
 }
 
 void Renderer::cleanup()
@@ -172,6 +173,8 @@ void Renderer::cleanup()
 	delete windowHandler;
 
 	glfwTerminate();
+
+	if (DEBUG) std::cout << "Renderer successfully terminated.\n";
 }
 
 void Renderer::createVertexBuffer() {
