@@ -96,14 +96,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Camera.h" />
+    <ClInclude Include="src\ECS\Voxel.h" />
     <ClInclude Include="src\Globals.h" />
-    <ClInclude Include="src\ECS\Entities\LoadedModel.h" />
-    <ClInclude Include="src\ECS\Entities\Model.h" />
+    <ClInclude Include="src\ECS\Components\LoadedModel.h" />
+    <ClInclude Include="src\ECS\Components\Model.h" />
     <ClInclude Include="src\Renderer.h" />
     <ClInclude Include="src\ECS\Scene.h" />
     <ClInclude Include="src\ECS\Components\TransformComponent.h" />
     <ClInclude Include="src\Vertex.h" />
-    <ClInclude Include="src\ECS\Entities\VoxelModel.h" />
+    <ClInclude Include="src\ECS\Components\VoxelModel.h" />
     <ClInclude Include="src\vulkanHandlers\BufferHelpers.h" />
     <ClInclude Include="src\vulkanHandlers\CommandBuffersHandler.h" />
     <ClInclude Include="src\vulkanHandlers\DepthResourcesHandler.h" />

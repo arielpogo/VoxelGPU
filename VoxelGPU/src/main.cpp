@@ -1,14 +1,21 @@
-
 #include "Renderer.h"
+#include "ECS/Scene.h"
 
 int main(){
-	Renderer renderer;
-	GLFWwindow* window;
-
 	try 
 	{
-		renderer.init();
+		Renderer renderer;
+		GLFWwindow* window;
+
 		window = renderer.getWindowPointer();
+
+		Scene scene(renderer.getDeviceHandler(), renderer.getCommandBuffersHandler());
+
+		scene.AddVoxel(glm::vec3(0.0f, 10.0f, 0.0f));
+
+		scene.FinishScene();
+
+		renderer.scene = &scene;
 
 		while (!glfwWindowShouldClose(window))
 		{

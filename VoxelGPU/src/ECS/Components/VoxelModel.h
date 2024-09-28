@@ -1,10 +1,22 @@
 #pragma once
+
+
 #include "Model.h"
 
 class VoxelModel : public Model
 {
 public:
-	VoxelModel(float l, float w, float h)
+	VoxelModel(glm::vec3& size)
+	{
+		InitData(size.x, size.y, size.z);
+	}
+
+	VoxelModel()
+	{
+		InitData(1.0f, 1.0f, 1.0f);
+	}
+
+	void InitData(float l, float w, float h)
 	{
 		vertices =
 		{

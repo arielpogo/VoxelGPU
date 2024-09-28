@@ -15,7 +15,7 @@
 #include "vulkanHandlers/CommandBuffersHandler.h"
 #include "vulkanHandlers/DepthResourcesHandler.h"
 
-#include "ECS/Entities/VoxelModel.h"
+#include "ECS/Scene.h"
 #include "Vertex.h"
 #include "Camera.h"
 
@@ -26,12 +26,16 @@ static void processInput(GLFWwindow*);
 class Renderer
 {
 public:
+	Renderer() { init(); }
+
 	Camera* camera;
 	bool framebufferResized = false;
 
-	void init();
+	Scene* scene;
 
 	GLFWwindow* getWindowPointer() { return windowHandler->getWindowPointer(); }
+	DeviceHandler* getDeviceHandler() { return deviceHandler; }
+	CommandBuffersHandler* getCommandBuffersHandler() { return commandBuffersHandler;  }
 	
 	void doLoop()
 	{
@@ -63,23 +67,23 @@ private:
 	CommandBuffersHandler* commandBuffersHandler;
 
 	TextureHandler* texture;
-	Model* model;
 
-	VkBuffer vertexBuffer;
-	VkDeviceMemory vertexBufferMemory;
-	VkBuffer indexBuffer;
-	VkDeviceMemory indexBufferMemory;
+	//VkBuffer vertexBuffer;
+	//VkDeviceMemory vertexBufferMemory;
+	//VkBuffer indexBuffer;
+	//VkDeviceMemory indexBufferMemory;
 
 	std::vector<VkSemaphore> imageAvailableSemaphores;
 	std::vector<VkSemaphore> renderFinishedSemaphores; //
 	std::vector<VkFence> inFlightFences; //used to block host while gpu is rendering the previous frame
 
+	void init();
 	void initVulkan();
 	void cleanup();
 
-	void createVertexBuffer();
-
-	void createIndexBuffer();
+	//void createVertexBuffer();
+	//
+	//void createIndexBuffer();
 
 	void createSyncObjects();
 
@@ -135,9 +139,9 @@ void Renderer::initVulkan() {
 	descriptorSets = new DescriptorSetsHandler(logicalDevice, camera->getUniformBuffers(), texture);
 
 	graphicsPipelineHandler = new GraphicsPipelineHandler(logicalDevice, swapchainHandler, descriptorSets->getDescriptorSetLayout(), renderPassHandler->getRenderPass());
-	model = new VoxelModel(1.0f, 1.0f, 1.0f);
-	createVertexBuffer();
-	createIndexBuffer();
+
+	//createVertexBuffer();
+	//createIndexBuffer();
 	createSyncObjects();
 
 	if (DEBUG) std::cout << "Vulkan successfully initialized.\n";
@@ -152,13 +156,15 @@ void Renderer::cleanup()
 	delete renderPassHandler;
 	delete camera;
 	delete descriptorSets;
-	delete model;
+	//delete model;
 	delete texture;
 
-	vkDestroyBuffer(device, vertexBuffer, nullptr);
-	vkFreeMemory(device, vertexBufferMemory, nullptr);
-	vkDestroyBuffer(device, indexBuffer, nullptr);
-	vkFreeMemory(device, indexBufferMemory, nullptr);
+	//vkDestroyBuffer(device, vertexBuffer, nullptr);
+	//vkFreeMemory(device, vertexBufferMemory, nullptr);
+	//vkDestroyBuffer(device, indexBuffer, nullptr);
+	//vkFreeMemory(device, indexBufferMemory, nullptr);
+
+	scene->TerminateScene();
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
 		vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
@@ -177,7 +183,7 @@ void Renderer::cleanup()
 	if (DEBUG) std::cout << "Renderer successfully terminated.\n";
 }
 
-void Renderer::createVertexBuffer() {
+/*void Renderer::createVertexBuffer() {
 	VkDeviceSize bufferSize = sizeof(*model->getVertexData()) * model->getVertexDataSize();
 
 	VkBuffer stagingBuffer;
@@ -218,7 +224,7 @@ void Renderer::createIndexBuffer() {
 
 	vkDestroyBuffer(device, stagingBuffer, nullptr);
 	vkFreeMemory(device, stagingBufferMemory, nullptr);
-}
+} */
 
 void Renderer::createSyncObjects() {
 	imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
@@ -342,10 +348,10 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelineHandler->getGraphicsPipeline());
 
-	VkBuffer vertexBuffers[] = { vertexBuffer };
+	VkBuffer vertexBuffers[] = { scene->GetRenderInfo().vertexBuffer};
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-	vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+	vkCmdBindIndexBuffer(commandBuffer, scene->GetRenderInfo().indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
 	//these are the dynamic state things specified when creating the pipeline:
 	VkViewport viewport{};
@@ -363,7 +369,7 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelineHandler->getPipelineLayout(), 0, 1, &descriptorSets->getDescriptorSets()[currentFrame], 0, nullptr);
-	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(model->getIndicesDataSize()), 1, 0, 0, 0);
+	vkCmdDrawIndexed(commandBuffer, scene->GetRenderInfo().numIndices, 1, 0, 0, 0);
 
 	vkCmdEndRenderPass(commandBuffer);
 
