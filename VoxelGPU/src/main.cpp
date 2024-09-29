@@ -11,7 +11,8 @@ int main(){
 
 		Scene scene(renderer.getDeviceHandler(), renderer.getCommandBuffersHandler());
 
-		scene.AddVoxel(glm::vec3(0.0f, 10.0f, 0.0f));
+		scene.AddVoxel(glm::vec3(0.0f, 1.0f, 0.0f));
+		scene.AddVoxel(glm::vec3(5.0f, 0.0f, 0.0f));
 
 		scene.FinishScene();
 

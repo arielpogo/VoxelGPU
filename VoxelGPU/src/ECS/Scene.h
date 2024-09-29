@@ -7,6 +7,7 @@
 
 struct RendererInfo
 {
+
 	DeviceHandler* deviceHandler;
 	CommandBuffersHandler* commandBuffersHandler;
 
@@ -60,7 +61,7 @@ public:
 private:
 	void createVertexBuffer() 
 	{
-		VkDeviceSize bufferSize = sizeof(Vertex) * voxels.size() * 8;
+		VkDeviceSize bufferSize = sizeof(Vertex) * VoxelModel::VERTICIES_PER_VOXEL * voxels.size();
 
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
@@ -71,11 +72,27 @@ private:
 		void* data;
 		vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
 		
-		int i = 0;
-		for (auto& pair : voxels)
+		int voxelOn = 0;
+
+		for (auto& IDVoxelPair : voxels)
 		{
-			memcpy((Vertex*)data + sizeof(Vertex) * i * 8, pair.second.VoxelModel.getVertexData(), sizeof(Vertex) * 8);
-			++i;
+			Vertex* writeStart = (Vertex*)data + VoxelModel::VERTICIES_PER_VOXEL * voxelOn;
+			Vertex* readStart = IDVoxelPair.second.VoxelModel.getVertexData();
+			for (Vertex *writePtr = writeStart, *readPtr = readStart;
+				 writePtr < writeStart + VoxelModel::VERTICIES_PER_VOXEL && readPtr < readStart + VoxelModel::VERTICIES_PER_VOXEL;
+				++writePtr, ++readPtr)
+			{
+				*writePtr = *readPtr;
+
+				glm::vec4 homogenousPos = glm::vec4(readPtr->pos, 1.0f);
+				homogenousPos = IDVoxelPair.second.Transform.GetTransformMatrix() * homogenousPos;
+
+				writePtr->pos.x = homogenousPos.x;
+				writePtr->pos.y = homogenousPos.y;
+				writePtr->pos.z = homogenousPos.z;
+			}
+
+			++voxelOn;
 		}
 
 		vkUnmapMemory(device, stagingBufferMemory);
@@ -89,7 +106,7 @@ private:
 	}
 
 	void createIndexBuffer() {
-		VkDeviceSize bufferSize = 36 * voxels.size() * sizeof(uint32_t);
+		VkDeviceSize bufferSize = sizeof(uint32_t) * VoxelModel::INDICES_PER_VOXEL * voxels.size();
 
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
@@ -100,13 +117,22 @@ private:
 		void* data;
 		vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
 
-		int i = 0;
-		for (auto& pair : voxels)
+		int voxelOn = 0;
+
+		for (auto& IDVoxelPair : voxels)
 		{
-			memcpy((uint32_t*) data + 36 * sizeof(uint32_t) * i, pair.second.VoxelModel.getIndicesData(), 36 * sizeof(uint32_t));
-			++i;
+			uint32_t* writeStart = (uint32_t*)data + VoxelModel::INDICES_PER_VOXEL * voxelOn;
+			uint32_t* readStart = IDVoxelPair.second.VoxelModel.getIndicesData();
+			for (uint32_t* writePtr = writeStart, *readPtr = readStart;
+				writePtr < writeStart + VoxelModel::INDICES_PER_VOXEL && readPtr < readStart + VoxelModel::INDICES_PER_VOXEL;
+				++writePtr, ++readPtr)
+			{
+				*(writePtr) = *(readPtr) + VoxelModel::VERTICIES_PER_VOXEL * voxelOn;
+			}
+
+			++voxelOn;
 		}
-		ri.numIndices = i * 36;
+		ri.numIndices = voxelOn * 36;
 
 		vkUnmapMemory(device, stagingBufferMemory);
 

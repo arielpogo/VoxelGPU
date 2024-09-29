@@ -6,6 +6,9 @@
 class VoxelModel : public Model
 {
 public:
+	static const uint32_t VERTICIES_PER_VOXEL = 8;
+	static const uint32_t INDICES_PER_VOXEL = 36;
+
 	VoxelModel(glm::vec3& size)
 	{
 		InitData(size.x, size.y, size.z);

@@ -19,6 +19,10 @@ struct TransformComponent
 
 	inline glm::mat4 GetTransformMatrix() const
 	{
-		return glm::translate(glm::mat4(1.0f), Translation) * glm::toMat4(glm::quat(Rotation)) * glm::scale(glm::mat4(1.0f), Scale);
+		glm::mat4 toReturn(1.0f);
+		toReturn[3].x = Translation.x;
+		toReturn[3].y = Translation.y;
+		toReturn[3].z = Translation.z;
+		return toReturn;
 	}
 };
