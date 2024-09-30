@@ -1,5 +1,7 @@
 #include "Renderer.h"
 #include "ECS/Scene.h"
+#include <chrono>
+#include <random>
 
 int main(){
 	try 
@@ -11,16 +13,44 @@ int main(){
 
 		Scene scene(renderer.getDeviceHandler(), renderer.getCommandBuffersHandler());
 
-		scene.AddVoxel(glm::vec3(0.0f, 1.0f, 0.0f));
-		scene.AddVoxel(glm::vec3(5.0f, 0.0f, 0.0f));
+		std::linear_congruential_engine<std::uint_fast32_t, 16807, 0, 2147483647> lce;
+		glm::vec3 white(1.0f);
+		glm::vec3 blue(0.0f, 0.0f, 1.0f);
+
+		unsigned int num = 0;
+		for (float x = 0.0f; x < 10.0f; x += 0.1f)
+		{
+			for (float z = 0.0f; z < 10.0f; z += 0.1f)
+			{
+				glm::vec3 position(x, 0.0f, z);
+				if(num % 2 == 0) scene.AddVoxel(TransformComponent(position), white);
+				else scene.AddVoxel(TransformComponent(position), blue);
+				++num;
+			}
+			++num;
+		}
 
 		scene.FinishScene();
 
 		renderer.scene = &scene;
 
+		auto start = std::chrono::high_resolution_clock::now();
+		auto oneSecond = std::chrono::seconds(1);
+		uint32_t counter = 0;
+
 		while (!glfwWindowShouldClose(window))
 		{
 			renderer.doLoop();
+			++counter;
+
+			auto now = std::chrono::high_resolution_clock::now();
+
+			if (now - start > oneSecond)
+			{
+				std::cout << "FPS: " << counter << '\n';
+				start = now;
+				counter = 0;
+			}
 		}
 
 		renderer.terminate();

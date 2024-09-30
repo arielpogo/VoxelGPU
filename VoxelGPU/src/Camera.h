@@ -39,7 +39,7 @@ public:
 		uniformBuffers = new UniformBuffers(_dh, _sh);
 		ubo.model = glm::mat4(1.0f);
 		ubo.view = glm::mat4(1.0f);
-		ubo.projection = correction * glm::perspective(glm::radians(45.0f), swapchainHandler->getSwapchainExtent().width / (float)swapchainHandler->getSwapchainExtent().height, 0.1f, 10.0f);
+		ubo.projection = correction * glm::perspective(glm::radians(45.0f), swapchainHandler->getSwapchainExtent().width / (float)swapchainHandler->getSwapchainExtent().height, 0.1f, 1000.0f);
 		//ubo.projection[1][1] *= -1; //glm was originally for opengl which has the y clip coordinates inverted from Vulkan
 	}
 

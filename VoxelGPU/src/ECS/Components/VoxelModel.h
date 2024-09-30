@@ -9,28 +9,33 @@ public:
 	static const uint32_t VERTICIES_PER_VOXEL = 8;
 	static const uint32_t INDICES_PER_VOXEL = 36;
 
-	VoxelModel(glm::vec3& size)
+	VoxelModel(const glm::vec3& size)
 	{
 		InitData(size.x, size.y, size.z);
 	}
 
-	VoxelModel()
+	VoxelModel(const glm::vec3& size, const glm::vec3& color)
 	{
-		InitData(1.0f, 1.0f, 1.0f);
+		InitData(size.x, size.y, size.z, color.r, color.g, color.b);
 	}
 
-	void InitData(float l, float w, float h)
+	VoxelModel()
+	{
+		InitData(0.1f, 0.1f, 0.1f);
+	}
+
+	void InitData(float l, float w, float h, float r = 1.0f, float g = 1.0f, float b = 1.0f)
 	{
 		vertices =
 		{
-			Vertex(glm::vec3(0,0,0), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec2(0.0f, 0.0f)),//0
-			Vertex(glm::vec3(0,0,w), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec2(0.0f, 0.0f)),//1
-			Vertex(glm::vec3(0,h,0), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec2(0.0f, 0.0f)),//2
-			Vertex(glm::vec3(0,h,w), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec2(0.0f, 0.0f)),//3
-			Vertex(glm::vec3(l,0,0), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec2(0.0f, 0.0f)),//4
-			Vertex(glm::vec3(l,0,w), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec2(0.0f, 0.0f)),//5
-			Vertex(glm::vec3(l,h,0), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec2(0.0f, 0.0f)),//6
-			Vertex(glm::vec3(l,h,w), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec2(0.0f, 0.0f))//7
+			Vertex(glm::vec3(0,0,0), glm::vec3(r, g, b), glm::vec2(0.0f, 0.0f)),//0
+			Vertex(glm::vec3(0,0,w), glm::vec3(r, g, b), glm::vec2(0.0f, 0.0f)),//1
+			Vertex(glm::vec3(0,h,0), glm::vec3(r, g, b), glm::vec2(0.0f, 0.0f)),//2
+			Vertex(glm::vec3(0,h,w), glm::vec3(r, g, b), glm::vec2(0.0f, 0.0f)),//3
+			Vertex(glm::vec3(l,0,0), glm::vec3(r, g, b), glm::vec2(0.0f, 0.0f)),//4
+			Vertex(glm::vec3(l,0,w), glm::vec3(r, g, b), glm::vec2(0.0f, 0.0f)),//5
+			Vertex(glm::vec3(l,h,0), glm::vec3(r, g, b), glm::vec2(0.0f, 0.0f)),//6
+			Vertex(glm::vec3(l,h,w), glm::vec3(r, g, b), glm::vec2(0.0f, 0.0f))//7
 		};
 
 		indices = {

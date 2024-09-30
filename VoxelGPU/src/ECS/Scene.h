@@ -35,10 +35,9 @@ public:
 
 	RendererInfo& GetRenderInfo() { return ri; }
 
-	void AddVoxel(glm::vec3 position)
+	void AddVoxel(const TransformComponent& T, const glm::vec3& color = glm::vec3(1.0f))
 	{
-		Voxel v;
-		v.Transform = TransformComponent(position);
+		Voxel v(T, glm::vec3(0.1f), color);
 		voxels[idCount] = v;
 		++idCount;
 	}
