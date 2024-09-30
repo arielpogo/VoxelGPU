@@ -19,6 +19,15 @@
 #include "Vertex.h"
 #include "Camera.h"
 
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_vulkan.h"
+#include "imconfig.h"
+#include "imgui_internal.h"
+#include "imstb_rectpack.h"
+#include "imstb_textedit.h"
+#include "imstb_truetype.h"
+
 static void framebufferResizeCallback(GLFWwindow*, int, int);
 static void mouse_callback(GLFWwindow*, double, double);
 static void processInput(GLFWwindow*);
@@ -68,6 +77,8 @@ private:
 
 	TextureHandler* texture;
 
+	ImGuiContext* ImGuiContext;
+
 	//VkBuffer vertexBuffer;
 	//VkDeviceMemory vertexBufferMemory;
 	//VkBuffer indexBuffer;
@@ -79,6 +90,7 @@ private:
 
 	void init();
 	void initVulkan();
+	void initImGui();
 	void cleanup();
 
 	//void createVertexBuffer();
@@ -121,6 +133,7 @@ void Renderer::init()
 	glfwSetCursorPosCallback(window, mouse_callback);
 
 	initVulkan();
+	initImGui();
 }
 
 void Renderer::initVulkan() {
@@ -147,8 +160,40 @@ void Renderer::initVulkan() {
 	if (DEBUG) std::cout << "Vulkan successfully initialized.\n";
 }
 
+void Renderer::initImGui()
+{
+	IMGUI_CHECKVERSION();
+	ImGuiContext = ImGui::CreateContext();
+
+	ImGui_ImplGlfw_InitForVulkan(windowHandler->getWindowPointer(), true);
+	
+	ImGui_ImplVulkan_InitInfo initInfo = {}; //taking after vulkan I see...
+	initInfo.Instance = instanceHandler->getInstance();
+	initInfo.PhysicalDevice = deviceHandler->getPhysicalDevice();
+	initInfo.Device = deviceHandler->getLogicalDevice();
+	initInfo.QueueFamily = deviceHandler->getQueueFamilyIndices().graphicsFamily.value();
+	initInfo.Queue = deviceHandler->getGraphicsQueue();
+	initInfo.PipelineCache = VK_NULL_HANDLE;
+	initInfo.RenderPass = renderPassHandler->getRenderPass();
+	initInfo.DescriptorPool = descriptorSets->getDescriptorPool();
+	initInfo.Subpass = 0;
+	initInfo.MinImageCount = MAX_FRAMES_IN_FLIGHT;
+	initInfo.ImageCount = MAX_FRAMES_IN_FLIGHT;
+	initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+	initInfo.CheckVkResultFn = 0;
+
+	ImGui_ImplVulkan_Init(&initInfo);
+
+	ImGui_ImplVulkan_CreateFontsTexture();
+}
+
 void Renderer::cleanup()
 {
+	ImGui_ImplVulkan_DestroyFontsTexture();
+	ImGui_ImplVulkan_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
+
 	VkDevice& device = deviceHandler->getLogicalDevice();
 
 	delete swapchainHandler;
@@ -270,10 +315,11 @@ void Renderer::drawFrame() {
 	processInput(windowHandler->getWindowPointer());
 	camera->Update(currentFrame);
 
+	recordCommandBuffer(commandBuffersHandler->GetCommandBuffers()[currentFrame], imageIndex);
+
 	vkResetFences(device, 1, &inFlightFences[currentFrame]);
 
-	vkResetCommandBuffer(commandBuffersHandler->GetCommandBuffers()[currentFrame], /*VkCommandBufferResetFlagBits*/ 0);
-	recordCommandBuffer(commandBuffersHandler->GetCommandBuffers()[currentFrame], imageIndex);
+	//vkResetCommandBuffer(commandBuffersHandler->GetCommandBuffers()[currentFrame], /*VkCommandBufferResetFlagBits*/ 0);
 
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -323,7 +369,7 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	//optional
-	beginInfo.flags = 0;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 	beginInfo.pInheritanceInfo = nullptr;
 
 	if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) throw std::runtime_error("Failed to beign recording command buffer.\n");
@@ -370,6 +416,15 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelineHandler->getPipelineLayout(), 0, 1, &descriptorSets->getDescriptorSets()[currentFrame], 0, nullptr);
 	vkCmdDrawIndexed(commandBuffer, scene->GetRenderInfo().numIndices, 1, 0, 0, 0);
+
+	//IMGUI
+	ImGui_ImplVulkan_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+	ImGui::ShowDemoWindow();
+
+	ImGui::Render();
+	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer, 0);
 
 	vkCmdEndRenderPass(commandBuffer);
 
