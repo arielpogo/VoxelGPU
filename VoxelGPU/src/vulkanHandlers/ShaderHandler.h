@@ -40,7 +40,7 @@ private:
 
         file.close();
         
-        if(DEBUG) std::cout << '"' << filename << "\" loaded as: " << code.size() << " bytes\n";
+        std::cout << '"' << filename << "\" loaded as: " << code.size() << " bytes\n";
 
 		VkShaderModuleCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;

@@ -54,10 +54,9 @@ public:
         //get all extensions (notice it's the same fn from before)
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
-        if(DEBUG){
-            std::cout << "Available extensions:\n";
-            for(const auto& e : extensions) std::cout << '\t' << e.extensionName << '\n';
-        }
+
+        std::cout << "Available extensions:\n";
+        for(const auto& e : extensions) std::cout << '\t' << e.extensionName << '\n';
 
         createInfo.enabledExtensionCount = glfwExtensionCount;
         createInfo.ppEnabledExtensionNames = glfwExtensions;

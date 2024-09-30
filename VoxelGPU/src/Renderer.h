@@ -28,6 +28,8 @@
 #include "imstb_textedit.h"
 #include "imstb_truetype.h"
 
+#include <chrono>
+
 static void framebufferResizeCallback(GLFWwindow*, int, int);
 static void mouse_callback(GLFWwindow*, double, double);
 static void processInput(GLFWwindow*);
@@ -48,8 +50,20 @@ public:
 	
 	void doLoop()
 	{
+		auto now = std::chrono::high_resolution_clock::now();
+		auto timePassed = now - previousTimepoint;
+
+		if (timePassed > oneSecond)
+		{
+			auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(timePassed);
+			fps = framesRendered / (ms.count()/1000.0f);
+			framesRendered = 0;
+			previousTimepoint = now;
+		}
+
 		glfwPollEvents();
 		drawFrame();
+		++framesRendered;
 	}
 
 	void terminate() 
@@ -60,6 +74,12 @@ public:
 
 private:
 	uint32_t currentFrame = 0;
+
+	//for fps purposes
+	uint16_t framesRendered = 0;
+	std::chrono::steady_clock::time_point previousTimepoint = std::chrono::high_resolution_clock::now();
+	const std::chrono::seconds oneSecond = std::chrono::seconds(1);
+	float fps = 0;
 
     const std::vector<const char*> validationLayers = {
         "VK_LAYER_KHRONOS_validation"
@@ -79,11 +99,6 @@ private:
 
 	ImGuiContext* ImGuiContext;
 
-	//VkBuffer vertexBuffer;
-	//VkDeviceMemory vertexBufferMemory;
-	//VkBuffer indexBuffer;
-	//VkDeviceMemory indexBufferMemory;
-
 	std::vector<VkSemaphore> imageAvailableSemaphores;
 	std::vector<VkSemaphore> renderFinishedSemaphores; //
 	std::vector<VkFence> inFlightFences; //used to block host while gpu is rendering the previous frame
@@ -93,14 +108,9 @@ private:
 	void initImGui();
 	void cleanup();
 
-	//void createVertexBuffer();
-	//
-	//void createIndexBuffer();
-
 	void createSyncObjects();
 
 	void drawFrame();
-
 	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 };
 
@@ -118,9 +128,6 @@ static void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 	//call MouseCallback on the window's render's camera
 	reinterpret_cast<Renderer*>(glfwGetWindowUserPointer(window))->camera->MouseCallback(xpos, ypos);
 }
-
-
-#include "Renderer.h"
 
 void Renderer::init()
 {
@@ -153,15 +160,14 @@ void Renderer::initVulkan() {
 
 	graphicsPipelineHandler = new GraphicsPipelineHandler(logicalDevice, swapchainHandler, descriptorSets->getDescriptorSetLayout(), renderPassHandler->getRenderPass());
 
-	//createVertexBuffer();
-	//createIndexBuffer();
 	createSyncObjects();
 
-	if (DEBUG) std::cout << "Vulkan successfully initialized.\n";
+	std::cout << "Vulkan successfully initialized.\n";
 }
 
 void Renderer::initImGui()
 {
+#ifdef DEBUG
 	IMGUI_CHECKVERSION();
 	ImGuiContext = ImGui::CreateContext();
 
@@ -185,14 +191,19 @@ void Renderer::initImGui()
 	ImGui_ImplVulkan_Init(&initInfo);
 
 	ImGui_ImplVulkan_CreateFontsTexture();
+
+	std::cout << "ImGui successfully initialized\n";
+#endif
 }
 
 void Renderer::cleanup()
 {
+#ifdef DEBUG
 	ImGui_ImplVulkan_DestroyFontsTexture();
 	ImGui_ImplVulkan_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
+#endif
 
 	VkDevice& device = deviceHandler->getLogicalDevice();
 
@@ -201,13 +212,7 @@ void Renderer::cleanup()
 	delete renderPassHandler;
 	delete camera;
 	delete descriptorSets;
-	//delete model;
 	delete texture;
-
-	//vkDestroyBuffer(device, vertexBuffer, nullptr);
-	//vkFreeMemory(device, vertexBufferMemory, nullptr);
-	//vkDestroyBuffer(device, indexBuffer, nullptr);
-	//vkFreeMemory(device, indexBufferMemory, nullptr);
 
 	scene->TerminateScene();
 
@@ -225,51 +230,8 @@ void Renderer::cleanup()
 
 	glfwTerminate();
 
-	if (DEBUG) std::cout << "Renderer successfully terminated.\n";
+	std::cout << "Renderer successfully terminated.\n";
 }
-
-/*void Renderer::createVertexBuffer() {
-	VkDeviceSize bufferSize = sizeof(*model->getVertexData()) * model->getVertexDataSize();
-
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMemory;
-	BufferHelpers::CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory, deviceHandler);
-
-	VkDevice& device = deviceHandler->getLogicalDevice();
-
-	void* data;
-	vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-	memcpy(data, model->getVertexData(), (size_t)bufferSize);
-	vkUnmapMemory(device, stagingBufferMemory);
-
-	BufferHelpers::CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory, deviceHandler);
-
-	BufferHelpers::CopyBuffer(stagingBuffer, vertexBuffer, bufferSize, commandBuffersHandler);
-
-	vkDestroyBuffer(device, stagingBuffer, nullptr);
-	vkFreeMemory(device, stagingBufferMemory, nullptr);
-}
-
-void Renderer::createIndexBuffer() {
-	VkDeviceSize bufferSize = sizeof(*model->getIndicesData()) * model->getIndicesDataSize();
-
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMemory;
-	BufferHelpers::CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory, deviceHandler);
-
-	VkDevice& device = deviceHandler->getLogicalDevice();
-
-	void* data;
-	vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-	memcpy(data, model->getIndicesData(), (size_t)bufferSize);
-	vkUnmapMemory(device, stagingBufferMemory);
-
-	BufferHelpers::CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory, deviceHandler);
-	BufferHelpers::CopyBuffer(stagingBuffer, indexBuffer, bufferSize, commandBuffersHandler);
-
-	vkDestroyBuffer(device, stagingBuffer, nullptr);
-	vkFreeMemory(device, stagingBufferMemory, nullptr);
-} */
 
 void Renderer::createSyncObjects() {
 	imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
@@ -311,9 +273,8 @@ void Renderer::drawFrame() {
 		throw std::runtime_error("failed to acquire swap chain image!");
 	}
 
-	//uniformBuffers->updateUniformBuffer(currentFrame);
 	processInput(windowHandler->getWindowPointer());
-	camera->Update(currentFrame);
+	camera->Update(currentFrame); //updates UBOs
 
 	recordCommandBuffer(commandBuffersHandler->GetCommandBuffers()[currentFrame], imageIndex);
 
@@ -417,14 +378,15 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelineHandler->getPipelineLayout(), 0, 1, &descriptorSets->getDescriptorSets()[currentFrame], 0, nullptr);
 	vkCmdDrawIndexed(commandBuffer, scene->GetRenderInfo().numIndices, 1, 0, 0, 0);
 
-	//IMGUI
+#ifdef DEBUG
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
-	ImGui::ShowDemoWindow();
+	ImGui::Text("FPS: %.1f", fps);
 
 	ImGui::Render();
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer, 0);
+#endif
 
 	vkCmdEndRenderPass(commandBuffer);
 

@@ -1,6 +1,5 @@
 #include "Renderer.h"
 #include "ECS/Scene.h"
-#include <chrono>
 #include <random>
 
 int main(){
@@ -31,26 +30,11 @@ int main(){
 		}
 
 		scene.FinishScene();
-
 		renderer.scene = &scene;
-
-		auto start = std::chrono::high_resolution_clock::now();
-		auto oneSecond = std::chrono::seconds(1);
-		uint32_t counter = 0;
 
 		while (!glfwWindowShouldClose(window))
 		{
 			renderer.doLoop();
-			++counter;
-
-			auto now = std::chrono::high_resolution_clock::now();
-
-			if (now - start > oneSecond)
-			{
-				std::cout << "FPS: " << counter << '\n';
-				start = now;
-				counter = 0;
-			}
 		}
 
 		renderer.terminate();
