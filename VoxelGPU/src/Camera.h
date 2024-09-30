@@ -49,6 +49,8 @@ public:
 	}
 
 	inline UniformBuffers* getUniformBuffers() { return uniformBuffers; }
+	inline glm::vec3& getPos() { return cameraPos; }
+	inline glm::vec3& getCameraDirection() { return cameraDirection; }
 
 	void Update(uint32_t currentFrame) {
 		ubo.model = glm::mat4(1.0f);
@@ -59,7 +61,7 @@ public:
 		uniformBuffers->updateUniformBuffer(ubo, currentFrame);
 	}
 
-	void MouseCallback(double xpos, double ypos)
+	void MouseCallback(float xpos, float ypos)
 	{
 		if (firstMouseInput) {
 			lastx = xpos;

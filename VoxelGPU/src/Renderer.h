@@ -29,6 +29,7 @@
 #include "imstb_truetype.h"
 
 #include <chrono>
+#include <cmath>
 
 static void framebufferResizeCallback(GLFWwindow*, int, int);
 static void mouse_callback(GLFWwindow*, double, double);
@@ -70,6 +71,38 @@ public:
 	{
 		vkDeviceWaitIdle(deviceHandler->getLogicalDevice()); //prevent premature closure while the device is finishing up
 		cleanup();
+	}
+
+	void processImGui()
+	{
+#ifdef DEBUG
+		ImGui::Text("FPS: %.1f", fps);
+
+		glm::vec3& pos = camera->getPos();
+		ImGui::Text("Position");
+		ImGui::Text("\tX: %.3f", pos.x);
+		ImGui::Text("\tY: %.3f", pos.y);
+		ImGui::Text("\tZ: %.3f", pos.z);
+
+		glm::vec3& dir = camera->getCameraDirection();
+		const char* directionString;
+		if (std::fabs(dir.z) > std::fabs(dir.x))
+		{
+			if (dir.z < 0) directionString = "-Z, North";
+			else directionString = "+Z, South";
+		}
+		else
+		{
+			if (dir.x < 0) directionString = "-X, West";
+			else directionString = "+X, East";
+		}
+
+		ImGui::Text("Camera direction");
+		ImGui::Text("\tX: %.3f", dir.x);
+		ImGui::Text("\tZ: %.3f", dir.z);
+		ImGui::Text("\tY: %.3f", dir.y);
+		ImGui::Text("\t%s", directionString);
+#endif
 	}
 
 private:
@@ -126,7 +159,7 @@ static void processInput(GLFWwindow* window) {
 
 static void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 	//call MouseCallback on the window's render's camera
-	reinterpret_cast<Renderer*>(glfwGetWindowUserPointer(window))->camera->MouseCallback(xpos, ypos);
+	reinterpret_cast<Renderer*>(glfwGetWindowUserPointer(window))->camera->MouseCallback((float) xpos, (float) ypos);
 }
 
 void Renderer::init()
@@ -382,7 +415,8 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
-	ImGui::Text("FPS: %.1f", fps);
+
+	processImGui();
 
 	ImGui::Render();
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer, 0);
